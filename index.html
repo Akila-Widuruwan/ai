@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediScan AI | Smart Medicine Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Sinhala:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #06060e;
+            --bg-card: #111122;
+            --bg-input: #0a0a15;
+            --border: #1e1e35;
+            --text-primary: #e8e8f0;
+            --text-secondary: #9090a8;
+            --text-muted: #5a5a75;
+            --accent-blue: #4f6ef6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #22d3bb;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --gradient-primary: linear-gradient(135deg, #4f6ef6 0%, #8b5cf6 50%, #a78bfa 100%);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', 'Noto Sans Sinhala', sans-serif; 
+            background: var(--bg-primary); 
+            color: var(--text-primary); 
+            min-height: 100vh; 
+            line-height: 1.7;
+            padding-top: 15px;
+        }
+        .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .bg-orb { position: absolute; border-radius: 50%; filter: blur(140px); opacity: 0.06; animation: orbFloat 20s ease-in-out infinite; }
+        .bg-orb-1 { width: 500px; height: 500px; background: var(--accent-blue); top: -150px; right: -80px; }
+        .bg-orb-2 { width: 400px; height: 400px; background: var(--accent-purple); bottom: -100px; left: -80px; animation-delay: -8s; }
+        .bg-orb-3 { width: 350px; height: 350px; background: var(--accent-cyan); top: 60%; left: 60%; animation-delay: -16s; }
+        @keyframes orbFloat { 0%,100% { transform: translate(0,0) scale(1); } 25% { transform: translate(80px,-60px) scale(1.15); } 50% { transform: translate(-40px,80px) scale(0.9); } 75% { transform: translate(-80px,-40px) scale(1.05); } }
+        .app-wrapper { position: relative; z-index: 1; }
+        
+        /* Navbar */
+        .navbar { 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            background: rgba(6,6,14,0.92); 
+            backdrop-filter: blur(24px); 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+            padding: 0.6rem 1.5rem;
+            margin-top: 8px;
+        }
+        .navbar-inner { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            height: 56px;
+            gap: 0.8rem; 
+        }
+        .logo-container { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+        .logo-icon { 
+            width: 38px; 
+            height: 38px; 
+            background: var(--gradient-primary); 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .logo-icon svg { width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 2; }
+        .logo-text { 
+            font-size: 1.3rem; 
+            font-weight: 800; 
+            background: var(--gradient-primary); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        
+        /* Language Switcher */
+        .lang-switcher { 
+            display: flex; 
+            align-items: center; 
+            background: var(--bg-card); 
+            border-radius: 50px; 
+            padding: 3px; 
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .lang-btn { 
+            padding: 7px 16px; 
+            border-radius: 50px; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 0.82rem; 
+            transition: all 0.3s ease; 
+            font-family: inherit; 
+            background: transparent; 
+            color: var(--text-muted); 
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            line-height: 1.2;
+        }
+        .lang-btn.active { 
+            background: var(--gradient-primary); 
+            color: white; 
+            box-shadow: 0 4px 15px rgba(79,110,246,0.3); 
+        }
+        .lang-btn:hover:not(.active) { color: var(--text-primary); }
+        .lang-flag { font-size: 1rem; line-height: 1; display: inline-flex; align-items: center; }
+
+        .api-badge { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.4rem; 
+            padding: 6px 14px; 
+            border-radius: 50px; 
+            font-size: 0.75rem; 
+            background: rgba(16,185,129,0.1); 
+            border: 1px solid rgba(16,185,129,0.3); 
+            color: var(--accent-green);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 50% { box-shadow: 0 0 0 8px rgba(16,185,129,0); } }
+        
+        /* Main Container */
+        .main-container { max-width: 1000px; margin: 2.5rem auto 2rem; padding: 0 1.2rem; }
+        .hero-section { text-align: center; margin-bottom: 1.8rem; padding-top: 0.5rem; }
+        .hero-title { font-size: 2.2rem; font-weight: 900; background: linear-gradient(135deg, #fff 0%, #c0c0d8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+        .hero-subtitle { color: var(--text-secondary); font-size: 1rem; max-width: 600px; margin: 0 auto; }
+        
+        /* Upload Card */
+        .upload-card { 
+            background: linear-gradient(145deg, rgba(17,17,34,0.95), rgba(12,12,24,0.98)); 
+            border: 2px dashed var(--border); 
+            border-radius: 20px; 
+            padding: 2.5rem 1.5rem; 
+            text-align: center; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            margin-bottom: 1.2rem; 
+        }
+        .upload-card:hover { border-color: var(--accent-blue); box-shadow: 0 0 40px rgba(79,110,246,0.2); }
+        .upload-card.has-image { border-style: solid; border-color: var(--accent-green); padding: 1.2rem; }
+        .upload-input { display: none; }
+        .preview-container { position: relative; display: inline-block; margin-bottom: 0.8rem; }
+        .preview-image { max-width: 250px; max-height: 250px; border-radius: 12px; border: 2px solid var(--border); object-fit: contain; background: var(--bg-input); }
+        .remove-image-btn { position: absolute; top: -6px; right: -6px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-red); border: none; color: white; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+        
+        /* Buttons */
+        .btn { padding: 0.8rem 1.8rem; border: none; border-radius: 50px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; font-family: inherit; transition: all 0.4s; }
+        .btn-primary { background: var(--gradient-primary); color: white; box-shadow: 0 4px 20px rgba(79,110,246,0.35); }
+        .btn-primary:hover { transform: translateY(-3px); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        /* Results */
+        .results-card { background: linear-gradient(145deg, rgba(17,17,34,0.95), rgba(12,12,24,0.98)); border: 1px solid var(--border); border-radius: 20px; padding: 1.5rem; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .medicine-name { font-size: 1.5rem; font-weight: 800; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .medicine-category { display: inline-block; padding: 0.25rem 0.8rem; background: rgba(79,110,246,0.1); border: 1px solid rgba(79,110,246,0.2); border-radius: 50px; font-size: 0.75rem; font-weight: 600; color: var(--accent-blue); margin-bottom: 1.2rem; }
+        .results-top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; }
+        .speak-btn { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 50px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-primary); font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.25s ease; }
+        .speak-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+        .speak-btn.speaking { background: var(--gradient-primary); color: white; border-color: transparent; }
+        .speak-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+        .info-section { margin-bottom: 1.2rem; padding: 1rem; background: var(--bg-input); border-radius: 10px; border: 1px solid var(--border); }
+        .info-section-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; }
+        .info-section-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .info-section-icon svg { width: 16px; height: 16px; stroke: white; fill: none; stroke-width: 2; }
+        .icon-usage { background: var(--accent-blue); } .icon-dosage { background: var(--accent-purple); }
+        .icon-warning { background: var(--accent-amber); } .icon-side-effects { background: var(--accent-red); }
+        .icon-info { background: var(--accent-cyan); }
+        .info-section-title { font-weight: 700; font-size: 0.9rem; }
+        .info-section-content { color: var(--text-secondary); font-size: 0.85rem; padding-left: 2.8rem; line-height: 1.7; }
+        .hidden { display: none !important; }
+        .loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1.2rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .disclaimer { text-align: center; color: var(--text-muted); font-size: 0.7rem; margin-top: 0.8rem; padding: 0.6rem; background: rgba(255,255,255,0.02); border-radius: 8px; }
+        .warning-box { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 10px; padding: 1rem; margin-top: 1.2rem; display: flex; gap: 0.6rem; align-items: flex-start; }
+        .warning-box svg { width: 20px; height: 20px; stroke: var(--accent-red); fill: none; stroke-width: 2; flex-shrink: 0; margin-top: 1px; }
+        .warning-box p { color: #fca5a5; font-size: 0.8rem; margin: 0; }
+        .toast { position: fixed; bottom: 1.5rem; right: 1rem; left: 1rem; z-index: 9999; padding: 0.8rem 1.2rem; border-radius: 10px; font-weight: 600; font-size: 0.85rem; animation: slideIn 0.3s ease; text-align: center; max-width: 400px; margin: 0 auto; }
+        @keyframes slideIn { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        /* Upload icon */
+        .upload-icon-svg { width: 56px; height: 56px; margin-bottom: 1.2rem; }
+
+        /* ==================== RESPONSIVE BREAKPOINTS ==================== */
+        
+        /* Tablet */
+        @media (max-width: 900px) {
+            .navbar-inner { height: auto; padding: 0.5rem 0; flex-wrap: wrap; justify-content: center; gap: 0.6rem; }
+            .logo-container { order: 1; }
+            .lang-switcher { order: 2; }
+            .api-badge { order: 3; }
+            .hero-title { font-size: 1.9rem; }
+            .hero-subtitle { font-size: 0.9rem; }
+            .main-container { margin: 2rem auto 1.5rem; }
+        }
+        
+        /* Mobile */
+        @media (max-width: 640px) {
+            body { padding-top: 10px; }
+            .navbar { padding: 0.4rem 0.8rem; margin-top: 5px; }
+            .navbar-inner { gap: 0.5rem; padding: 0.3rem 0; }
+            .logo-icon { width: 34px; height: 34px; border-radius: 8px; }
+            .logo-icon svg { width: 18px; height: 18px; }
+            .logo-text { font-size: 1.1rem; }
+            .lang-btn { padding: 6px 12px; font-size: 0.75rem; gap: 4px; }
+            .lang-flag { font-size: 0.9rem; }
+            .api-badge { padding: 5px 10px; font-size: 0.7rem; }
+            
+            .main-container { margin: 1.5rem auto 1.2rem; padding: 0 0.8rem; }
+            .hero-section { margin-bottom: 1.2rem; }
+            .hero-title { font-size: 1.6rem; }
+            .hero-subtitle { font-size: 0.85rem; padding: 0 0.5rem; }
+            
+            .upload-card { padding: 1.8rem 1rem; border-radius: 16px; }
+            .upload-card.has-image { padding: 1rem; }
+            .upload-icon-svg { width: 48px; height: 48px; margin-bottom: 1rem; }
+            .preview-image { max-width: 200px; max-height: 200px; }
+            
+            .btn { padding: 0.7rem 1.4rem; font-size: 0.85rem; width: 100%; justify-content: center; }
+            .btn-primary { width: 100%; }
+            
+            .results-card { padding: 1.2rem; border-radius: 16px; }
+            .medicine-name { font-size: 1.3rem; }
+            .info-section { padding: 0.8rem; }
+            .info-section-icon { width: 28px; height: 28px; }
+            .info-section-icon svg { width: 14px; height: 14px; }
+            .info-section-title { font-size: 0.8rem; }
+            .info-section-content { font-size: 0.8rem; padding-left: 2.2rem; }
+            
+            .loading-spinner { width: 35px; height: 35px; }
+        }
+        
+        /* Small Mobile */
+        @media (max-width: 400px) {
+            .navbar-inner { gap: 0.4rem; }
+            .lang-btn { padding: 5px 10px; font-size: 0.7rem; }
+            .lang-flag { font-size: 0.8rem; }
+            .api-badge { font-size: 0.65rem; padding: 4px 8px; }
+            .status-dot { width: 5px; height: 5px; }
+            
+            .hero-title { font-size: 1.4rem; }
+            .hero-subtitle { font-size: 0.78rem; }
+            
+            .upload-card { padding: 1.5rem 0.8rem; }
+            .upload-icon-svg { width: 40px; height: 40px; }
+            .preview-image { max-width: 160px; max-height: 160px; }
+            
+            .results-card { padding: 1rem; }
+            .medicine-name { font-size: 1.2rem; }
+            .info-section-content { padding-left: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation">
+        <div class="bg-orb bg-orb-1"></div>
+        <div class="bg-orb bg-orb-2"></div>
+        <div class="bg-orb bg-orb-3"></div>
+    </div>
+    <div class="app-wrapper">
+        <nav class="navbar">
+            <div class="navbar-inner">
+                <div class="logo-container">
+                    <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/></svg></div>
+                    <span class="logo-text">MediScan AI</span>
+                </div>
+                
+                <div class="lang-switcher">
+                    <button class="lang-btn active" onclick="switchLanguage('en')" id="btnEn">
+                        <span class="lang-flag">🇺🇸</span>English
+                    </button>
+                    <button class="lang-btn" onclick="switchLanguage('si')" id="btnSi">
+                        <span class="lang-flag">🇱🇰</span>සිංහල
+                    </button>
+                </div>
+                
+                <div class="api-badge"><span class="status-dot"></span><span>gemini-2.5-flash-lite</span></div>
+            </div>
+        </nav>
+        <div class="main-container">
+            <div class="hero-section">
+                <h1 class="hero-title" id="heroTitle">Smart Medicine Analyzer</h1>
+                <p class="hero-subtitle" id="heroSubtitle">Upload a photo of any medicine and AI will tell you its uses, dosage, side effects & more</p>
+            </div>
+            <div class="upload-card" id="uploadCard" onclick="document.getElementById('fileInput').click()">
+                <div id="uploadPlaceholder">
+                    <svg class="upload-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#4f6ef6" stroke-width="1.5">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <div class="upload-text" id="uploadText" style="font-size:1.1rem;font-weight:600;margin-bottom:0.3rem;">Upload Medicine Photo</div>
+                    <div class="upload-hint" id="uploadHint">Click or drag & drop — JPG, PNG, WEBP</div>
+                </div>
+                <div id="imagePreview" class="hidden">
+                    <div class="preview-container">
+                        <img id="previewImg" class="preview-image" src="" alt="Preview" />
+                        <button class="remove-image-btn" onclick="removeImage(event)">✕</button>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" class="upload-input" accept="image/*" onchange="handleFileSelect(event)" />
+            </div>
+            <div style="text-align:center;margin-bottom:1.2rem;">
+                <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeMedicine()" disabled>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <span id="analyzeBtnText">Analyze Medicine</span>
+                </button>
+            </div>
+            <div id="loadingContainer" class="hidden" style="text-align:center;padding:2.5rem 1rem;">
+                <div class="loading-spinner"></div>
+                <p style="color:var(--text-secondary);font-size:0.9rem;" id="loadingText">AI is analyzing your medicine...</p>
+            </div>
+            <div id="resultsContainer" class="hidden"></div>
+            <div class="disclaimer" id="disclaimerText">
+                <strong>⚠️ Disclaimer:</strong> This tool provides AI-generated information for reference only. Always consult a doctor or pharmacist before taking any medication.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONFIGURATION ====================
+        const API_KEY = 'AQ.Ab8RN6L5hFJZU7-xZ4mBXOaw72urocqfJxp8PsqZcFZJ5KpoCw';
+        let currentLanguage = 'en';
+        let selectedFileBase64 = null;
+        let selectedMimeType = null;
+        let lastAnalysisText = null;
+        let speakableText = null;
+        let currentUtterance = null;
+        const SPEAK_ICON = '<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>';
+        const STOP_ICON = '<rect x="6" y="6" width="12" height="12" rx="2"/>';
+
+        // ==================== TRANSLATIONS ====================
+        const translations = {
+            en: {
+                heroTitle: 'Smart Medicine Analyzer',
+                heroSubtitle: 'Upload a photo of any medicine and AI will tell you its uses, dosage, side effects & more',
+                uploadText: 'Upload Medicine Photo',
+                uploadHint: 'Click or drag & drop — JPG, PNG, WEBP',
+                analyzeBtn: 'Analyze Medicine',
+                loadingText: 'AI is analyzing your medicine...',
+                disclaimer: '<strong>⚠️ Disclaimer:</strong> This tool provides AI-generated information for reference only. Always consult a doctor or pharmacist before taking any medication.',
+                toastUploadError: 'Please upload an image file!',
+                toastNoImage: 'Please upload a medicine image first!',
+                toastSuccess: 'Analysis complete!',
+                toastError: 'Analysis failed. Please try again.',
+                toastRetry: 'Try Again',
+                toastRateLimit: 'Too many requests right now — the free API plan allows a limited number of scans per minute. Please wait about a minute and try again.',
+                listenLabel: 'Listen',
+                stopLabel: 'Stop',
+                toastNoVoice: 'No Sinhala voice found on this device — reading using the default voice instead.',
+                failedTitle: 'Analysis Failed',
+                sectionTitles: {
+                    'MEDICINE_NAME': 'Medicine Name',
+                    'CATEGORY': 'Category',
+                    'USED_FOR': 'Primary Uses',
+                    'HOW_TO_USE': 'How to Use',
+                    'DOSAGE': 'Dosage Information',
+                    'SIDE_EFFECTS': 'Side Effects',
+                    'WARNINGS': 'Warnings & Precautions',
+                    'ADDITIONAL_INFO': 'Additional Information'
+                },
+                warningText: '<strong>Important:</strong> This is AI-generated information for reference only. Always consult a doctor or pharmacist before taking any medication.',
+                combinedPrompt: `Look at this medicine image (packaging, label, blister pack, or pill) and identify exactly which medicine it is.
+
+Then, using your medical knowledge and up-to-date information (search the web if needed), provide detailed information about that medicine. Do NOT limit yourself to what is printed on the package — provide the standard, well-known medical information about this medicine, the way a pharmacist reference guide would. Never say a field is "not visible" or refer back to the image for the details — once you know the medicine's name, answer from your knowledge/search results.
+
+Write in PLAIN TEXT only — no markdown, no asterisks, no bold, no headers, no numbered citation brackets like [1]. Each field label must appear alone at the start of its own line exactly as shown below, followed by a colon.
+
+Respond in English using this EXACT format:
+
+MEDICINE_NAME: [Name]
+
+CATEGORY: [Type]
+
+USED_FOR: [List all uses]
+
+HOW_TO_USE: [Instructions]
+
+DOSAGE: [Dosage info]
+
+SIDE_EFFECTS: [List side effects]
+
+WARNINGS: [List warnings]
+
+ADDITIONAL_INFO: [Other info]`
+            },
+            si: {
+                heroTitle: 'ස්මාර්ට් ඖෂධ විශ්ලේෂකය',
+                heroSubtitle: 'ඕනෑම ඖෂධයක ඡායාරූපයක් උඩුගත කරන්න, AI එහි භාවිතය, මාත්‍රාව, අතුරු ආබාධ සහ තවත් දේ ඔබට කියනු ඇත',
+                uploadText: 'ඖෂධ ඡායාරූපය උඩුගත කරන්න',
+                uploadHint: 'ක්ලික් කරන්න හෝ අදින්න — JPG, PNG, WEBP',
+                analyzeBtn: 'ඖෂධය විශ්ලේෂණය කරන්න',
+                loadingText: 'AI ඔබේ ඖෂධය විශ්ලේෂණය කරමින්...',
+                disclaimer: '<strong>⚠️ වියාචනය:</strong> මෙම මෙවලම AI-ජනිත තොරතුරු යොමු කිරීම සඳහා පමණක් සපයයි. කිසිදු ඖෂධයක් ගැනීමට පෙර සැමවිටම වෛද්‍යවරයෙකු හෝ ඖෂධවේදියෙකුගෙන් උපදෙස් ලබාගන්න.',
+                toastUploadError: 'කරුණාකර රූප ගොනුවක් උඩුගත කරන්න!',
+                toastNoImage: 'කරුණාකර පළමුව ඖෂධ ඡායාරූපයක් උඩුගත කරන්න!',
+                toastSuccess: 'විශ්ලේෂණය සම්පූර්ණයි!',
+                toastError: 'විශ්ලේෂණය අසාර්ථකයි. කරුණාකර නැවත උත්සාහ කරන්න.',
+                toastRetry: 'නැවත උත්සාහ කරන්න',
+                toastRateLimit: 'දැනට ඉල්ලීම් ගොඩක් යවා ඇත — නොමිලේ API සැලසුම මිනිත්තුවකට කළ හැකි විශ්ලේෂණ ගණන සීමා කරයි. කරුණාකර මිනිත්තුවක් පමණ රැඳී නැවත උත්සාහ කරන්න.',
+                listenLabel: 'ශ්‍රවණය කරන්න',
+                stopLabel: 'නවත්වන්න',
+                toastNoVoice: 'මෙම උපාංගයේ සිංහල හඬක් හමු නොවීය — පෙරනිමි හඬ භාවිතයෙන් කියවමින්.',
+                failedTitle: 'විශ්ලේෂණය අසාර්ථකයි',
+                sectionTitles: {
+                    'MEDICINE_NAME': 'ඖෂධ නාමය',
+                    'CATEGORY': 'වර්ගය',
+                    'USED_FOR': 'මූලික භාවිතයන්',
+                    'HOW_TO_USE': 'භාවිතා කරන ආකාරය',
+                    'DOSAGE': 'මාත්‍රා තොරතුරු',
+                    'SIDE_EFFECTS': 'අතුරු ආබාධ',
+                    'WARNINGS': 'අනතුරු ඇඟවීම් සහ පූර්වාරක්ෂාවන්',
+                    'ADDITIONAL_INFO': 'අමතර තොරතුරු'
+                },
+                warningText: '<strong>වැදගත්:</strong> මෙය AI-ජනිත තොරතුරු යොමු කිරීම සඳහා පමණි. කිසිදු ඖෂධයක් ගැනීමට පෙර සැමවිටම වෛද්‍යවරයෙකු හෝ ඖෂධවේදියෙකුගෙන් උපදෙස් ලබාගන්න.',
+                combinedPrompt: `Look at this medicine image (packaging, label, blister pack, or pill) and identify exactly which medicine it is.
+
+Then, using your medical knowledge and up-to-date information (search the web if needed), provide detailed information about that medicine. Do NOT limit yourself to what is printed on the package — provide the standard, well-known medical information about this medicine, the way a pharmacist reference guide would. Never say a field is "not visible" or refer back to the image for the details — once you know the medicine's name, answer from your knowledge/search results.
+
+CRITICAL LANGUAGE RULE: Your ENTIRE response must be written in Sinhala (සිංහල), with proper Sinhala grammar and sentences — not English. This applies even to information you find by searching the web in English: you must translate it into Sinhala yourself before writing it down. Do NOT copy or paste English sentences from search results. The ONLY things allowed to stay in English/Latin script are the medicine's brand name and its generic/chemical name (e.g. Panadol (Paracetamol)) — every explanation, instruction, and description around them must be Sinhala. If you are not fully confident in Sinhala medical vocabulary for a term, use a simple everyday Sinhala explanation instead of switching to English.
+
+Write in PLAIN TEXT only — no markdown, no asterisks, no bold, no headers, no numbered citation brackets like [1]. Each field label must appear alone at the start of its own line exactly as shown below (in English letters, followed by a colon), with the Sinhala content after it.
+
+Use this format:
+
+MEDICINE_NAME: [ඖෂධ නාමය සිංහලෙන්]
+
+CATEGORY: [වර්ගය සිංහලෙන්]
+
+USED_FOR: [භාවිතයන් සිංහලෙන්]
+
+HOW_TO_USE: [ගන්නා ආකාරය සිංහලෙන්]
+
+DOSAGE: [මාත්‍රාව සිංහලෙන්]
+
+SIDE_EFFECTS: [අතුරු ආබාධ සිංහලෙන්]
+
+WARNINGS: [අනතුරු ඇඟවීම් සිංහලෙන්]
+
+ADDITIONAL_INFO: [වෙනත් තොරතුරු සිංහලෙන්]
+
+Write everything in Sinhala. Be detailed.`
+            }
+        };
+
+        function switchLanguage(lang) {
+            currentLanguage = lang;
+            const t = translations[lang];
+            document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+            document.getElementById('btnSi').classList.toggle('active', lang === 'si');
+            document.getElementById('heroTitle').textContent = t.heroTitle;
+            document.getElementById('heroSubtitle').textContent = t.heroSubtitle;
+            document.getElementById('uploadText').textContent = t.uploadText;
+            document.getElementById('uploadHint').textContent = t.uploadHint;
+            document.getElementById('analyzeBtnText').textContent = t.analyzeBtn;
+            document.getElementById('loadingText').textContent = t.loadingText;
+            document.getElementById('disclaimerText').innerHTML = t.disclaimer;
+            if (lastAnalysisText && !document.getElementById('resultsContainer').classList.contains('hidden')) {
+                displayResults(lastAnalysisText);
+            }
+            localStorage.setItem('mediscan_language', lang);
+        }
+
+        const uploadCard = document.getElementById('uploadCard');
+        uploadCard.addEventListener('dragover', e => e.preventDefault());
+        uploadCard.addEventListener('drop', e => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (file) processFile(file);
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) processFile(file);
+        }
+
+        function processFile(file) {
+            const t = translations[currentLanguage];
+            if (!file.type.startsWith('image/')) { showToast(t.toastUploadError, 'error'); return; }
+            selectedMimeType = file.type;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                selectedFileBase64 = e.target.result;
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('uploadPlaceholder').classList.add('hidden');
+                document.getElementById('imagePreview').classList.remove('hidden');
+                document.getElementById('uploadCard').classList.add('has-image');
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('resultsContainer').classList.add('hidden');
+                lastAnalysisText = null;
+                stopSpeaking();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage(event) {
+            event.stopPropagation();
+            selectedFileBase64 = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('uploadPlaceholder').classList.remove('hidden');
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('uploadCard').classList.remove('has-image');
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('resultsContainer').classList.add('hidden');
+            lastAnalysisText = null;
+            stopSpeaking();
+        }
+
+        async function callGemini(parts, useSearch) {
+            const body = {
+                contents: [{ parts }],
+                generationConfig: { temperature: 0.3, maxOutputTokens: 2000 }
+            };
+            if (useSearch) { body.tools = [{ google_search: {} }]; }
+            const response = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`,
+                { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+            );
+            const data = await response.json();
+            if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                return data.candidates[0].content.parts[0].text.trim();
+            } else if (data.error) {
+                const err = new Error(data.error.message);
+                err.status = data.error.code || response.status;
+                throw err;
+            } else {
+                throw new Error('No response from AI.');
+            }
+        }
+
+        function friendlyErrorMessage(error, t) {
+            const msg = (error && error.message) || '';
+            if (error && error.status === 429 || /quota|rate limit/i.test(msg)) {
+                return t.toastRateLimit || 'Too many requests right now — the free API plan allows a limited number of scans per minute. Please wait about a minute and try again.';
+            }
+            return msg;
+        }
+
+        // Checks whether a block of text is mostly Sinhala script. Used to catch
+        // cases where the model (especially with search grounding) slips back
+        // into English despite instructions.
+        function isMostlySinhala(text) {
+            const cleaned = text.replace(/MEDICINE_NAME:|CATEGORY:|USED_FOR:|HOW_TO_USE:|DOSAGE:|SIDE_EFFECTS:|WARNINGS:|ADDITIONAL_INFO:/g, '');
+            const sinhalaChars = (cleaned.match(/[\u0D80-\u0DFF]/g) || []).length;
+            const latinChars = (cleaned.match(/[A-Za-z]/g) || []).length;
+            if (sinhalaChars + latinChars < 20) return true; // too short to judge, don't false-flag
+            return sinhalaChars > latinChars;
+        }
+
+        async function analyzeMedicine() {
+            const t = translations[currentLanguage];
+            if (!selectedFileBase64) { showToast(t.toastNoImage, 'error'); return; }
+            document.getElementById('loadingContainer').classList.remove('hidden');
+            document.getElementById('resultsContainer').classList.add('hidden');
+            document.getElementById('analyzeBtn').disabled = true;
+            stopSpeaking();
+            const base64Data = selectedFileBase64.split(',')[1];
+            const mimeType = selectedMimeType || 'image/jpeg';
+            try {
+                // Single call: look at the image to identify the medicine, then
+                // fill in the rest from general/web knowledge (search grounding
+                // enabled) instead of relying on what's printed on the packaging.
+                let detailText = await callGemini(
+                    [{ text: t.combinedPrompt }, { inlineData: { mimeType, data: base64Data } }],
+                    true
+                );
+
+                // Safety net: if this is the Sinhala mode and the model leaked
+                // English (common with search grounding), ask it to redo the
+                // whole thing purely in Sinhala.
+                if (currentLanguage === 'si' && !isMostlySinhala(detailText)) {
+                    const retranslatePrompt = `Rewrite the following medicine information COMPLETELY in Sinhala (සිංහල). Translate every sentence yourself — do not leave any English explanation text in place. Keep the brand/generic medicine name in English/Latin script if needed, but everything else must be Sinhala. Write in plain text only, no markdown or asterisks. Keep the exact same field format, each label alone on its own line (MEDICINE_NAME:, CATEGORY:, USED_FOR:, HOW_TO_USE:, DOSAGE:, SIDE_EFFECTS:, WARNINGS:, ADDITIONAL_INFO:).\n\n${detailText}`;
+                    try {
+                        const retranslated = await callGemini([{ text: retranslatePrompt }], false);
+                        if (retranslated && isMostlySinhala(retranslated)) { detailText = retranslated; }
+                    } catch (e) { /* keep original if retry fails */ }
+                }
+
+                lastAnalysisText = detailText;
+                displayResults(lastAnalysisText);
+                showToast(t.toastSuccess, 'success');
+            } catch (error) {
+                const friendlyMsg = friendlyErrorMessage(error, t);
+                document.getElementById('resultsContainer').innerHTML = `<div class="results-card" style="text-align:center;padding:2rem;"><h3 style="color:#ef4444;">${t.failedTitle}</h3><p style="color:var(--text-secondary);">${escapeHTML(friendlyMsg)}</p><button class="btn btn-primary" onclick="analyzeMedicine()" style="margin-top:1rem;">${t.toastRetry}</button></div>`;
+                document.getElementById('resultsContainer').classList.remove('hidden');
+                showToast(t.toastError, 'error');
+            }
+            document.getElementById('loadingContainer').classList.add('hidden');
+            document.getElementById('analyzeBtn').disabled = false;
+        }
+
+        // Strips markdown formatting (bold/italic/headers/backticks) so section
+        // markers are recognized even if the model bolds them, e.g. "**MEDICINE_NAME:**".
+        function stripMarkdown(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '$1')
+                .replace(/\*(.*?)\*/g, '$1')
+                .replace(/^#+\s*/gm, '')
+                .replace(/`/g, '');
+        }
+
+        function displayResults(text) {
+            const t = translations[currentLanguage];
+            const container = document.getElementById('resultsContainer');
+            const sections = {};
+            const markers = ['MEDICINE_NAME:', 'CATEGORY:', 'USED_FOR:', 'HOW_TO_USE:', 'DOSAGE:', 'SIDE_EFFECTS:', 'WARNINGS:', 'ADDITIONAL_INFO:'];
+            let currentKey = null;
+            stripMarkdown(text).split('\n').forEach(line => {
+                let found = false;
+                for (const marker of markers) {
+                    if (line.trim().toUpperCase().startsWith(marker)) { currentKey = marker.replace(':', ''); sections[currentKey] = line.substring(marker.length).trim(); found = true; break; }
+                }
+                if (!found && currentKey && line.trim()) { sections[currentKey] = (sections[currentKey] || '') + '\n' + line.trim(); }
+            });
+            if (Object.keys(sections).length === 0) { sections['MEDICINE_NAME'] = text.split('\n')[0] || 'Analysis Result'; sections['USED_FOR'] = text; }
+            const icons = {
+                'USED_FOR': { icon: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>', cls: 'icon-usage' },
+                'HOW_TO_USE': { icon: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>', cls: 'icon-info' },
+                'DOSAGE': { icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', cls: 'icon-dosage' },
+                'SIDE_EFFECTS': { icon: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/>', cls: 'icon-side-effects' },
+                'WARNINGS': { icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>', cls: 'icon-warning' },
+                'ADDITIONAL_INFO': { icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>', cls: 'icon-info' },
+            };
+            let html = '<div class="results-card">';
+            html += '<div class="results-top-row"><div>';
+            if (sections['MEDICINE_NAME']) html += `<div class="medicine-name">${escapeHTML(sections['MEDICINE_NAME'].split('\n')[0].trim())}</div>`;
+            if (sections['CATEGORY']) html += `<div class="medicine-category">${escapeHTML(sections['CATEGORY'].split('\n')[0].trim())}</div>`;
+            html += '</div>';
+            html += `<button type="button" id="speakBtn" class="speak-btn" onclick="toggleSpeakResults()"><svg id="speakIcon" viewBox="0 0 24 24">${SPEAK_ICON}</svg><span id="speakBtnLabel">${t.listenLabel}</span></button>`;
+            html += '</div>';
+            for (const [key, cfg] of Object.entries(icons)) {
+                if (sections[key] && sections[key].trim()) {
+                    let content = sections[key].trim().replace(/^[-•*]\s*/gm, '• ').replace(/\n/g, '<br>');
+                    html += `<div class="info-section"><div class="info-section-header"><div class="info-section-icon ${cfg.cls}"><svg viewBox="0 0 24 24">${cfg.icon}</svg></div><span class="info-section-title">${t.sectionTitles[key] || key}</span></div><div class="info-section-content">${content}</div></div>`;
+                }
+            }
+            html += `<div class="warning-box"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg><p>${t.warningText}</p></div></div>`;
+            container.innerHTML = html;
+            container.classList.remove('hidden');
+            container.scrollIntoView({ behavior: 'smooth' });
+
+            // Stop any speech from a previous result and build the text for the new one.
+            stopSpeaking();
+            speakableText = Object.entries(sections)
+                .filter(([key, val]) => val && val.trim())
+                .map(([key, val]) => `${t.sectionTitles[key] || key}. ${sanitizeForSpeech(val)}`)
+                .join(' ... ');
+            speakableText = sanitizeForSpeech(speakableText);
+        }
+
+        // Removes markdown/formatting artifacts (asterisks, underscores, bullet
+        // dashes, stray repeated punctuation) that would otherwise get read
+        // aloud literally by the speech synthesizer (e.g. "underscore", "dot dot").
+        function sanitizeForSpeech(str) {
+            return str
+                .replace(/\[\d+\]/g, '')              // strip citation markers like [1]
+                .replace(/^[-•*_>#\s]+/gm, '')      // strip leading bullet/markdown markers per line
+                .replace(/[*_`#]+/g, ' ')            // strip remaining markdown symbols
+                .replace(/-{2,}/g, ' ')               // strip double/triple hyphens
+                .replace(/\n+/g, ', ')                // line breaks become a spoken pause
+                .replace(/\.{2,}/g, '.')              // collapse repeated periods ("...")
+                .replace(/,{2,}/g, ',')               // collapse repeated commas
+                .replace(/\s+([.,;:])/g, '$1')        // no space before punctuation
+                .replace(/\s{2,}/g, ' ')              // collapse extra whitespace
+                .trim();
+        }
+
+        function escapeHTML(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
+
+        function stopSpeaking() {
+            if (window.speechSynthesis) { window.speechSynthesis.cancel(); }
+            currentUtterance = null;
+            const btn = document.getElementById('speakBtn');
+            if (btn) {
+                btn.classList.remove('speaking');
+                document.getElementById('speakIcon').innerHTML = SPEAK_ICON;
+                document.getElementById('speakBtnLabel').textContent = translations[currentLanguage].listenLabel;
+            }
+        }
+
+        function pickVoice(langPrefix) {
+            const voices = window.speechSynthesis.getVoices();
+            return voices.find(v => v.lang && v.lang.toLowerCase().startsWith(langPrefix));
+        }
+
+        function toggleSpeakResults() {
+            const t = translations[currentLanguage];
+            if (!window.speechSynthesis) { showToast('Text-to-speech is not supported in this browser.', 'error'); return; }
+
+            if (window.speechSynthesis.speaking) { stopSpeaking(); return; }
+            if (!speakableText) return;
+
+            const langPrefix = currentLanguage === 'si' ? 'si' : 'en';
+            const voice = pickVoice(langPrefix);
+            if (currentLanguage === 'si' && !voice) { showToast(t.toastNoVoice, 'info'); }
+
+            const utterance = new SpeechSynthesisUtterance(speakableText);
+            utterance.lang = currentLanguage === 'si' ? 'si-LK' : 'en-US';
+            if (voice) { utterance.voice = voice; }
+            utterance.rate = 0.95;
+
+            utterance.onend = stopSpeaking;
+            utterance.onerror = stopSpeaking;
+            currentUtterance = utterance;
+
+            const btn = document.getElementById('speakBtn');
+            if (btn) {
+                btn.classList.add('speaking');
+                document.getElementById('speakIcon').innerHTML = STOP_ICON;
+                document.getElementById('speakBtnLabel').textContent = t.stopLabel;
+            }
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Some browsers load voice lists asynchronously; warm it up early.
+        if (window.speechSynthesis) {
+            window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+        }
+
+        function showToast(message, type = 'info') {
+            const existing = document.querySelector('.toast'); if (existing) existing.remove();
+            const toast = document.createElement('div'); toast.className = 'toast';
+            const colors = { success: '#10b981', error: '#ef4444', info: '#4f6ef6' };
+            toast.style.background = colors[type] || colors.info; toast.style.color = 'white'; toast.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)'; toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        const savedLang = localStorage.getItem('mediscan_language') || 'en';
+        switchLanguage(savedLang);
+        console.log('🚀 MediScan AI Ready!');
+    </script>
+</body>
+</html>
